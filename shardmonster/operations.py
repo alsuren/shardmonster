@@ -15,6 +15,8 @@ from shardmonster.metadata import (
 #   untargetted_query_callback(collection_name, query)
 # This allows for an application to instrument untargetted queries and fix them
 untargetted_query_callback = None
+# Same as the above, but for targetted queries. Useful for statistics gathering.
+targetted_query_callback = None
 
 
 def _create_collection_iterator(collection_name, query, with_options={}):
@@ -35,6 +37,9 @@ def _create_collection_iterator(collection_name, query, with_options={}):
     if shard_key:
         location = _get_location_for_shard(realm, shard_key)
         locations = {location.location: location}
+        global targetted_query_callback
+        if targetted_query_callback:
+            targetted_query_callback(collection_name, query)
     else:
         locations = _get_all_locations_for_realm(realm)
         global untargetted_query_callback

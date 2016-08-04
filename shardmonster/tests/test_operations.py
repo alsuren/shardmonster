@@ -529,8 +529,24 @@ class TestStandardMultishardOperations(ShardingTestCase):
         except Exception as e:
             self.assertTrue('without shard field' in str(e))
 
-    def test_untargetted_query_callback(self):
-        _callback = Mock()
+    def test_untargetted_query_callbacks(self):
+        _untargetted_callback = Mock()
+        _targetted_callback = Mock()
+
+        doc1 = {'x': 1, 'y': 1}
+        doc2 = {'x': 2, 'y': 1}
+        self.db1.dummy.insert(doc1)
+        self.db2.dummy.insert(doc2)
+
+        api.set_untargetted_query_callback(_untargetted_callback)
+        list(operations.multishard_find('dummy', {'y': 1}))
+
+        _untargetted_callback.assert_called_with('dummy', {'y': 1})
+        self.assertEqual(_targetted_callback.call_count, 0)
+
+    def test_targetted_query_callbacks(self):
+        _untargetted_callback = Mock()
+        _targetted_callback = Mock()
 
         doc1 = {'x': 1, 'y': 1}
         doc2 = {'x': 2, 'y': 1}
@@ -538,9 +554,10 @@ class TestStandardMultishardOperations(ShardingTestCase):
         self.db2.dummy.insert(doc2)
 
         api.set_untargetted_query_callback(_callback)
-        list(operations.multishard_find('dummy', {'y': 1}))
+        list(operations.multishard_find('dummy', {'x': 1}))
 
-        _callback.assert_called_with('dummy', {'y': 1})
+        _targetted_callback.assert_called_with('dummy', {'x': 1})
+        self.assertEqual(_untargetted_callback.call_count, 0)
 
 
 class TestOtherOperations(ShardingTestCase):

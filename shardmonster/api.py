@@ -239,3 +239,10 @@ def set_untargetted_query_callback(callback):
     of the function will be ignored.
     """
     operations.untargetted_query_callback = callback
+
+def set_targetted_query_callback(callback):
+    """Sets the callback function for when a targetted (good) query occurs. The
+    function should take two arguments: collection_name, query. The return value
+    of the function will be ignored.
+    """
+    operations.targetted_query_callback = callback
