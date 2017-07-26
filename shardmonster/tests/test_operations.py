@@ -7,6 +7,7 @@ from pymongo import ASCENDING
 from shardmonster import api, operations
 from shardmonster.tests.base import ShardingTestCase
 
+
 class TestStandardMultishardOperations(ShardingTestCase):
     def setUp(self):
         super(TestStandardMultishardOperations, self).setUp()

@@ -86,7 +86,6 @@ class MultishardCursor(object):
         return _create_collection_iterator(
             self.collection_name, self.query, self.with_options)
 
-
     def _prepare_for_iteration(self):
         # The multishard cursor has to keep track of a surprising amount of
         # state. When we want to evaluate a multishard cursor the list of
@@ -100,7 +99,6 @@ class MultishardCursor(object):
         self._next_cursor()
         self._prepared = True
         self._skipped = 0
-
 
     def _next_cursor(self):
         collection, query, location = self._queries_pending.pop(0)
@@ -122,14 +120,11 @@ class MultishardCursor(object):
         self._explains[location] = cursor.explain
         self._current_cursor = cursor
 
-
     def __iter__(self):
         return self
 
-
     def __len__(self):
         return self.count()
-
 
     def next(self):
         res = self._next()
@@ -157,7 +152,6 @@ class MultishardCursor(object):
 
         return self._next_result()
 
-
     def _next_result(self):
         """Gets the next result from any cache or cursors available. Ignores
         skipping as that is done in a higher layer.
@@ -178,16 +172,13 @@ class MultishardCursor(object):
                 else:
                     raise
 
-
     def limit(self, limit):
         self.kwargs['limit'] = limit
         return self
 
-
     def skip(self, skip):
         self._skip = skip
         return self
-
 
     def sort(self, key_or_list, direction=None):
         if direction:
@@ -196,12 +187,10 @@ class MultishardCursor(object):
             self.kwargs['sort'] = key_or_list
         return self
 
-
     def clone(self):
         return MultishardCursor(
             self.collection_name, self.query, _hint=self._hint,
             *self.args, **self.kwargs)
-
 
     def __getitem__(self, i):
         if isinstance(i, int):
@@ -283,7 +272,6 @@ class MultishardCursor(object):
             # then applies the limit. Again, correctness over efficiency.
             self._cached_results = list(self)[:self.kwargs['limit']]
 
-
     def count(self, **count_kwargs):
         total = 0
         for collection, query, _ in self._create_collection_iterator():
@@ -296,18 +284,15 @@ class MultishardCursor(object):
         else:
             return total
 
-
     def rewind(self):
         self._cached_results = None
         self._current_cursor = None
         self._queries_pending = None
         self._prepared = False
 
-
     def hint(self, index):
         self._hint = index
         return self
-
 
     @property
     def alive(self):
