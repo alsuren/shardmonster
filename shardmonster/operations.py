@@ -135,14 +135,22 @@ class MultishardCursor(object):
         res = self._next()
         return res
 
+    def _to_list(self, honour_skip=True):
+        res = []
+        try:
+            while True:
+                res.append(self._next(honour_skip=honour_skip))
+        except StopIteration:
+            pass
+        return res
 
-    def _next(self):
+    def _next(self, honour_skip=True):
         if not self._prepared:
             self.evaluate()
 
         safe_skip = self._skip or 0
 
-        if not self._targetted:
+        if honour_skip and not self._targetted:
             while self._skipped < safe_skip:
                 self._skipped += 1
                 self._next_result()
@@ -252,7 +260,8 @@ class MultishardCursor(object):
             # then do a merge sort to save on memory. However, that is more
             # complex and I'd rather this was 100% correct and bloated
             # in memory.
-            all_results = list(self)
+            all_results = self._to_list(honour_skip=False)
+
             def comparator(d1, d2):
                 for key, sort_order in self.kwargs['sort']:
                     v1 = _get_value_by_key(d1, key)
@@ -264,6 +273,10 @@ class MultishardCursor(object):
                 return 0
 
             self._cached_results = list(sorted(all_results, cmp=comparator))
+            if self._skip:
+                self._cached_results = \
+                    self._cached_results[self._skip - self._skipped:]
+                self._skipped = self._skip
 
         if self.kwargs.get('limit'):
             # Note: This is also inefficient. This gets back all the results and
