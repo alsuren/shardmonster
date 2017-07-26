@@ -483,7 +483,8 @@ class TestStandardMultishardOperations(ShardingTestCase):
 
         c = operations.multishard_find('dummy', {'y': 1})[1:]
         results = sorted(list(c), key=lambda d: d['x'])
-        self.assertEquals([doc2], results)
+        # we're not specifying a sort, so the order is undefined.
+        self.assertIn(results, [[doc1], [doc2]])
 
     def test_non_zero_indexing(self):
         doc1 = {'x': 1, 'y': 1}
@@ -492,7 +493,8 @@ class TestStandardMultishardOperations(ShardingTestCase):
         self.db2.dummy.insert(doc2)
 
         result = operations.multishard_find('dummy', {'y': 1})[1]
-        self.assertEquals(doc2, result)
+        # we're not specifying a sort, so the order is undefined.
+        self.assertIn(result, [doc1, doc2])
 
     def test_skip_beyond_limit(self):
         self.db1.dummy.insert({'x': 1, 'y': 1})
@@ -503,8 +505,8 @@ class TestStandardMultishardOperations(ShardingTestCase):
         self.db2.dummy.insert(expected_doc)
 
         result = operations.multishard_find('dummy', {'y': 1}).limit(1).skip(4)
-        self.assertEquals([expected_doc], list(result))
-
+        # we're not specifying a sort, so the order is undefined.
+        self.assertEquals(len(list(result)), 1)
 
     def test_getitem_on_non_targetted_query(self):
         """This tests a bug that was found in a production environment. If a
