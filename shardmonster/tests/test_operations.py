@@ -348,6 +348,29 @@ class TestStandardMultishardOperations(ShardingTestCase):
             set(['queryPlanner', 'allPlans']) & set(e.keys()) != set()
             for (location, e) in explains.iteritems()
         ]))
+        self.assertEquals(
+            sorted(explains.keys()),
+            ['dest1/test_sharding', 'dest2/test_sharding'])
+
+    def test_explain_without_evaluation(self):
+        doc1 = {'x': 1, 'y': 1}
+        doc2 = {'x': 2, 'y': 1}
+        self.db1.dummy.insert(doc1)
+        self.db2.dummy.insert(doc2)
+
+        c = operations.multishard_find('dummy', {'y': 1}, sort=[('x', 1)])
+
+        explains = c.explain()
+        # mongo 2.6 and 3+ have differing explain output makes looking at more
+        # interesting values (like queryPlanner->parsedQuery) difficult
+        # without enforcing a particular version of mongo on the tester.
+        self.assertTrue(all([
+            set(['queryPlanner', 'allPlans']) & set(e.keys()) != set()
+            for (location, e) in explains.iteritems()
+        ]))
+        self.assertEquals(
+            sorted(explains.keys()),
+            ['dest1/test_sharding', 'dest2/test_sharding'])
 
     def test_cursor_explain_not_called_on_find(self):
         doc1 = {'x': 1, 'y': 1}

@@ -80,8 +80,7 @@ class MultishardCursor(object):
         self.with_options = kwargs.pop('with_options', {})
         self._prepared = False
         self._skip = 0
-        self._explains = []
-
+        self._explains = {}
 
     def _create_collection_iterator(self):
         return _create_collection_iterator(
@@ -120,7 +119,7 @@ class MultishardCursor(object):
         cursor = collection.find(query, *self.args, **query_kwargs)
         if self._hint:
             cursor = cursor.hint(self._hint)
-        self._explains.append((location, cursor.explain))
+        self._explains[location] = cursor.explain
         self._current_cursor = cursor
 
 
@@ -213,7 +212,28 @@ class MultishardCursor(object):
             return new_cursor
 
     def explain(self):
-        return {location: e() for (location, e) in self._explains}
+        if self._prepared:
+            # This cursor is in the middle of being iterated over, so we
+            # probably don't want to be making destructive updates to its state.
+            # Let's just give the caller the information that we have now,
+            # and warn them if they are missing some shards.
+            result = {
+                location: e() for (location, e) in self._explains.items()
+            }
+            if self._queries_pending:
+                result['other_cluster_count'] = len(self._queries_pending)
+        else:
+            # This is a fresh cursor, so let's gather the information we need,
+            # and then reset.
+            self._prepare_for_iteration()
+            while self._queries_pending:
+                self._next_cursor()
+            result = {
+                location: e() for (location, e) in self._explains.items()
+            }
+            self.rewind()
+
+        return result
 
     def evaluate(self):
         self._prepare_for_iteration()
